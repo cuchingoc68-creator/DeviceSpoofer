@@ -1,0 +1,9 @@
+Package: com.devicespoofer.tweak
+Name: Device Spoofer
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: Bypass device fingerprinting - spoof IDFV, IDFA, DeviceCheck, UDID, Serial
+Maintainer: DeviceSpoofer
+Author: DeviceSpoofer
+Section: Tweaks
+Depends: mobilesubstrate | ellekit

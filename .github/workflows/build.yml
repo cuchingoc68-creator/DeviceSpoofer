@@ -7,17 +7,35 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/theos/theos:latest
+    runs-on: macos-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build package
+      - name: Install dependencies
         run: |
-          make package FINALPACKAGE=1 2>&1 | tee build.log
+          brew install ldid dpkg make
+
+      - name: Clone Theos
+        run: |
+          git clone --recursive --depth 1 \
+            https://github.com/theos/theos.git $HOME/theos
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+
+      - name: Download iOS SDK
+        run: |
+          mkdir -p $HOME/theos/sdks
+          curl -Lo /tmp/sdk.tar.xz \
+            "https://github.com/theos/sdks/releases/latest/download/iPhoneOS16.5.sdk.tar.xz"
+          tar -xf /tmp/sdk.tar.xz -C $HOME/theos/sdks/
+          ls $HOME/theos/sdks/
+
+      - name: Build package
+        env:
+          THEOS: ${{ env.THEOS }}
+        run: |
+          gmake package FINALPACKAGE=1 2>&1 | tee build.log
           echo "=== Packages ==="
           ls -la packages/ 2>/dev/null || echo "No packages"
 

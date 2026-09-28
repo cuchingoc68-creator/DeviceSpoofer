@@ -13,9 +13,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Official Theos Action — tự cài toolchain + SDKs đúng cách
       - name: Setup Theos
-        uses: theos/theos-action@v1
+        uses: theos/theos-action@main
         with:
           toolchain: iOS-patched
           toolchain-cache: true
@@ -25,7 +24,7 @@ jobs:
         run: |
           make package FINALPACKAGE=1 2>&1 | tee build.log
           echo "=== Packages ==="
-          ls -la packages/ 2>/dev/null || echo "No packages"
+          ls -la packages/ 2>/dev/null || echo "No packages folder"
 
       - name: Upload .deb
         uses: actions/upload-artifact@v4

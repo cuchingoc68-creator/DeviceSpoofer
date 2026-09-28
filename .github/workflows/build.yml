@@ -8,23 +8,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/theos/theos:latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Theos
-        uses: theos/theos-action@main
-        with:
-          toolchain: iOS-patched
-          toolchain-cache: true
-          sdk-cache: true
-
       - name: Build package
         run: |
           make package FINALPACKAGE=1 2>&1 | tee build.log
           echo "=== Packages ==="
-          ls -la packages/ 2>/dev/null || echo "No packages folder"
+          ls -la packages/ 2>/dev/null || echo "No packages"
 
       - name: Upload .deb
         uses: actions/upload-artifact@v4

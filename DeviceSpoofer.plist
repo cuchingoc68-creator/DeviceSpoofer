@@ -1,0 +1,2 @@
+# Inject vào tất cả app dùng UIKit (= mọi app iOS)
+{ Filter = { Bundles = ("com.apple.UIKit"); }; }

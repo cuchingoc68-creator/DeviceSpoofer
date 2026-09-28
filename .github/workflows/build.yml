@@ -1,90 +1,39 @@
-name: Build DeviceSpoofer Tweak
+name: Build DeviceSpoofer
 
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch:   # cho phép chạy thủ công
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Cài công cụ cần thiết
-      - name: Install dependencies
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y \
-            build-essential git curl wget \
-            libplist-utils dpkg-dev fakeroot \
-            clang lld
+      # Official Theos Action — tự cài toolchain + SDKs đúng cách
+      - name: Setup Theos
+        uses: theos/theos-action@v1
+        with:
+          toolchain: iOS-patched
+          toolchain-cache: true
+          sdk-cache: true
 
-      # 3. Cài ldid (code signing tool cho iOS)
-      - name: Install ldid
+      - name: Build package
         run: |
-          curl -Lo /usr/local/bin/ldid \
-            https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_x86_64
-          chmod +x /usr/local/bin/ldid
-
-      # 4. Clone Theos
-      - name: Clone Theos
-        run: |
-          git clone --recursive https://github.com/theos/theos.git ${{ github.workspace }}/theos
-        env:
-          THEOS: ${{ github.workspace }}/theos
-
-      # 5. Download iOS SDKs (open-source từ theos/sdks)
-      - name: Download iOS SDKs
-        run: |
-          mkdir -p ${{ github.workspace }}/theos/sdks
-          curl -L https://github.com/theos/sdks/archive/master.tar.gz -o sdks.tar.gz
-          tar -xf sdks.tar.gz
-          mv sdks-master/*.sdk ${{ github.workspace }}/theos/sdks/ 2>/dev/null || true
-          ls ${{ github.workspace }}/theos/sdks/
-
-      # 6. Download Clang/LLVM toolchain cho cross-compile ARM64
-      - name: Setup ARM64 toolchain
-        run: |
-          # Dùng toolchain của Procursus
-          curl -LO https://github.com/nickcoutsos/theos-action/releases/download/latest/toolchain-linux.tar.gz 2>/dev/null || true
-          # Fallback: dùng llvm từ apt
-          sudo apt-get install -y llvm clang lld
-          # Setup cross-compile target
-          echo "CC=clang -target arm64-apple-ios15.0" >> $GITHUB_ENV
-          echo "CXX=clang++ -target arm64-apple-ios15.0" >> $GITHUB_ENV
-
-      # 7. Build tweak
-      - name: Build
-        env:
-          THEOS: ${{ github.workspace }}/theos
-          THEOS_MAKE_PATH: ${{ github.workspace }}/theos/makefiles
-        run: |
-          make package \
-            FINALPACKAGE=1 \
-            THEOS=${{ github.workspace }}/theos \
-            TARGET_CODESIGN=ldid \
-            2>&1 | tee build.log
-          
-          echo "=== Build log ==="
-          cat build.log
-          
+          make package FINALPACKAGE=1 2>&1 | tee build.log
           echo "=== Packages ==="
-          ls -la packages/ 2>/dev/null || echo "No packages folder found"
+          ls -la packages/ 2>/dev/null || echo "No packages"
 
-      # 8. Upload .deb artifact
       - name: Upload .deb
         uses: actions/upload-artifact@v4
         with:
-          name: DeviceSpoofer-${{ github.sha }}
-          path: |
-            packages/*.deb
+          name: DeviceSpoofer-deb
+          path: packages/*.deb
           if-no-files-found: warn
 
-      # 9. Upload build log nếu lỗi
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
